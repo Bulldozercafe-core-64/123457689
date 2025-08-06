@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>텍사스 홀덤 포커</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f4c3a 0%, #1a5f4a 50%, #0f4c3a 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .poker-table {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-header h1 {
+            font-size: 2.5rem;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .table-area {
+            background: radial-gradient(ellipse at center, #2d5a3d 0%, #1a4a2e 70%);
+            border: 8px solid #8b4513;
+            border-radius: 200px;
+            padding: 40px;
+            margin: 20px auto;
+            position: relative;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.3), 0 0 30px rgba(0,0,0,0.5);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .opponent-area {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .player-info {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .player-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .player-chips {
+            color: #ffd700;
+            font-size: 1.1rem;
+        }
+
+        .cards-area {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .card {
+            width: 60px;
+            height: 84px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            position: relative;
+            font-weight: bold;
+        }
+
+        .card.back {
+            background: linear-gradient(45deg, #1e3a8a, #3b82f6);
+            border: 2px solid #ffd700;
+        }
+
+        .card.back::after {
+            content: '🂠';
+            font-size: 2rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffd700;
+        }
+
+        .card-value {
+            font-size: 0.9rem;
+            line-height: 1;
+        }
+
+        .card-suit {
+            font-size: 1.2rem;
+            text-align: center;
+            margin: auto;
+        }
+
+        .red {
+            color: #dc2626;
+        }
+
+        .black {
+            color: #1f2937;
+        }
+
+        .community-cards {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .community-cards h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .community-cards .cards-area {
+            gap: 15px;
+        }
+
+        .community-cards .card {
+            width: 70px;
+            height: 98px;
+        }
+
+        .player-area {
+            text-align: center;
+        }
+
+        .pot-area {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .pot {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            border-radius: 50px;
+            padding: 15px 30px;
+            display: inline-block;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .betting-area {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .bet-button {
+            background: linear-gradient(45deg, #dc2626, #ef4444);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .bet-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .bet-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .bet-button.call {
+            background: linear-gradient(45deg, #059669, #10b981);
+        }
+
+        .bet-button.fold {
+            background: linear-gradient(45deg, #6b7280, #9ca3af);
+        }
+
+        .bet-input {
+            padding: 10px;
+            border: 2px solid #ffd700;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            font-size: 1rem;
+            width: 120px;
+        }
+
+        .game-status {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffd700;
+            min-height: 30px;
+        }
+
+        .hand-ranking {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .new-game-button {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .new-game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        @media (max-width: 768px) {
+            .poker-table {
+                padding: 10px;
+            }
+            
+            .game-header h1 {
+                font-size: 2rem;
+            }
+            
+            .table-area {
+                border-radius: 50px;
+                padding: 20px;
+            }
+            
+            .card {
+                width: 50px;
+                height: 70px;
+            }
+            
+            .community-cards .card {
+                width: 55px;
+                height: 77px;
+            }
+            
+            .betting-area {
+                gap: 10px;
+            }
+            
+            .bet-button {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="poker-table">
+        <div class="game-header">
+            <h1>🃏 텍사스 홀덤 포커</h1>
+            <p>AI와 함께하는 포커 게임</p>
+        </div>
+
+        <div class="table-area">
+            <!-- 상대방 (AI) 영역 -->
+            <div class="opponent-area">
+                <div class="player-info">
+                    <div class="player-name">🤖 AI 플레이어</div>
+                    <div class="player-chips">칩: $<span id="aiChips">1000</span></div>
+                </div>
+                <div class="cards-area" id="aiCards">
+                    <div class="card back"></div>
+                    <div class="card back"></div>
+                </div>
+                <div class="hand-ranking" id="aiHandRanking" style="display: none;"></div>
+            </div>
+
+            <!-- 커뮤니티 카드 영역 -->
+            <div class="community-cards">
+                <h3>커뮤니티 카드</h3>
+                <div class="cards-area" id="communityCards">
+                    <div class="card back"></div>
+                    <div class="card back"></div>
+                    <div class="card back"></div>
+                    <div class="card back"></div>
+                    <div class="card back"></div>
+                </div>
+            </div>
+
+            <!-- �팟 영역 -->
+            <div class="pot-area">
+                <div class="pot">
+                    팟: $<span id="potAmount">0</span>
+                </div>
+            </div>
+
+            <!-- 플레이어 영역 -->
+            <div class="player-area">
+                <div class="cards-area" id="playerCards">
+                    <div class="card back"></div>
+                    <div class="card back"></div>
+                </div>
+                <div class="hand-ranking" id="playerHandRanking"></div>
+                <div class="player-info">
+                    <div class="player-name">👤 당신</div>
+                    <div class="player-chips">칩: $<span id="playerChips">1000</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 게임 상태 -->
+        <div class="game-status" id="gameStatus">새 게임을 시작하세요!</div>
+
+        <!-- 베팅 영역 -->
+        <div class="betting-area" id="bettingArea" style="display: none;">
+            <button class="bet-button fold" onclick="fold()">폴드</button>
+            <button class="bet-button call" onclick="call()" id="callButton">콜</button>
+            <input type="number" class="bet-input" id="betAmount" placeholder="베팅액" min="10" max="1000">
+            <button class="bet-button" onclick="bet()">베팅/레이즈</button>
+            <button class="bet-button" onclick="allIn()">올인</button>
+        </div>
+
+        <button class="new-game-button" onclick="startNewGame()">새 게임 시작</button>
+    </div>
+
+    <script>
+        let gameState = {
+            deck: [],
+            playerCards: [],
+            aiCards: [],
+            communityCards: [],
+            playerChips: 1000,
+            aiChips: 1000,
+            pot: 0,
+            currentBet: 0,
+            playerBet: 0,
+            aiBet: 0,
+            gamePhase: 'preflop', // preflop, flop, turn, river, showdown
+            gameActive: false,
+            playerTurn: true
+        };
+
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const handRankings = [
+            '하이카드', '원페어', '투페어', '트리플', '스트레이트', 
+            '플러시', '풀하우스', '포카드', '스트레이트 플러시', '로얄 플러시'
+        ];
+
+        function createDeck() {
+            const deck = [];
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ suit, value });
+                }
+            }
+            return shuffleDeck(deck);
+        }
+
+        function shuffleDeck(deck) {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            return deck;
+        }
+
+        function dealCard() {
+            return gameState.deck.pop();
+        }
+
+        function createCardElement(card, isBack = false) {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            
+            if (isBack) {
+                cardElement.classList.add('back');
+                return cardElement;
+            }
+
+            const isRed = card.suit === '♥' || card.suit === '♦';
+            cardElement.innerHTML = `
+                <div class="card-value ${isRed ? 'red' : 'black'}">${card.value}</div>
+                <div class="card-suit ${isRed ? 'red' : 'black'}">${card.suit}</div>
+                <div class="card-value ${isRed ? 'red' : 'black'}" style="transform: rotate(180deg);">${card.value}</div>
+            `;
+            
+            return cardElement;
+        }
+
+        function startNewGame() {
+            gameState.deck = createDeck();
+            gameState.playerCards = [];
+            gameState.aiCards = [];
+            gameState.communityCards = [];
+            gameState.pot = 0;
+            gameState.currentBet = 0;
+            gameState.playerBet = 0;
+            gameState.aiBet = 0;
+            gameState.gamePhase = 'preflop';
+            gameState.gameActive = true;
+            gameState.playerTurn = true;
+
+            // 블라인드 베팅
+            gameState.playerChips -= 10; // 스몰 블라인드
+            gameState.aiChips -= 20; // 빅 블라인드
+            gameState.pot = 30;
+            gameState.currentBet = 20;
+            gameState.playerBet = 10;
+            gameState.aiBet = 20;
+
+            // 카드 딜링
+            for (let i = 0; i < 2; i++) {
+                gameState.playerCards.push(dealCard());
+                gameState.aiCards.push(dealCard());
+            }
+
+            updateDisplay();
+            document.getElementById('bettingArea').style.display = 'flex';
+            document.getElementById('gameStatus').textContent = '프리플랍 - 당신의 차례입니다';
+        }
+
+        function updateDisplay() {
+            // 플레이어 카드 업데이트
+            const playerCardsArea = document.getElementById('playerCards');
+            playerCardsArea.innerHTML = '';
+            gameState.playerCards.forEach(card => {
+                playerCardsArea.appendChild(createCardElement(card));
+            });
+
+            // AI 카드 업데이트 (게임 종료시에만 공개)
+            const aiCardsArea = document.getElementById('aiCards');
+            aiCardsArea.innerHTML = '';
+            if (gameState.gamePhase === 'showdown' || !gameState.gameActive) {
+                gameState.aiCards.forEach(card => {
+                    aiCardsArea.appendChild(createCardElement(card));
+                });
+            } else {
+                aiCardsArea.appendChild(createCardElement(null, true));
+                aiCardsArea.appendChild(createCardElement(null, true));
+            }
+
+            // 커뮤니티 카드 업데이트
+            const communityCardsArea = document.getElementById('communityCards');
+            communityCardsArea.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                if (i < gameState.communityCards.length) {
+                    communityCardsArea.appendChild(createCardElement(gameState.communityCards[i]));
+                } else {
+                    communityCardsArea.appendChild(createCardElement(null, true));
+                }
+            }
+
+            // 칩과 팟 업데이트
+            document.getElementById('playerChips').textContent = gameState.playerChips;
+            document.getElementById('aiChips').textContent = gameState.aiChips;
+            document.getElementById('potAmount').textContent = gameState.pot;
+
+            // 핸드 랭킹 업데이트
+            if (gameState.communityCards.length >= 3) {
+                const playerHand = evaluateHand([...gameState.playerCards, ...gameState.communityCards]);
+                document.getElementById('playerHandRanking').textContent = `현재 핸드: ${handRankings[playerHand.rank]}`;
+                
+                if (gameState.gamePhase === 'showdown' || !gameState.gameActive) {
+                    const aiHand = evaluateHand([...gameState.aiCards, ...gameState.communityCards]);
+                    document.getElementById('aiHandRanking').textContent = `AI 핸드: ${handRankings[aiHand.rank]}`;
+                    document.getElementById('aiHandRanking').style.display = 'block';
+                }
+            }
+
+            // 콜 버튼 텍스트 업데이트
+            const callButton = document.getElementById('callButton');
+            const callAmount = gameState.currentBet - gameState.playerBet;
+            if (callAmount > 0) {
+                callButton.textContent = `콜 ($${callAmount})`;
+            } else {
+                callButton.textContent = '체크';
+            }
+        }
+
+        function call() {
+            const callAmount = gameState.currentBet - gameState.playerBet;
+            if (callAmount > 0) {
+                gameState.playerChips -= callAmount;
+                gameState.pot += callAmount;
+                gameState.playerBet += callAmount;
+            }
+            
+            gameState.playerTurn = false;
+            setTimeout(aiTurn, 1000);
+        }
+
+        function bet() {
+            const betAmount = parseInt(document.getElementById('betAmount').value);
+            if (!betAmount || betAmount < 10) {
+                alert('최소 베팅액은 $10입니다.');
+                return;
+            }
+            
+            if (betAmount > gameState.playerChips) {
+                alert('보유 칩보다 많이 베팅할 수 없습니다.');
+                return;
+            }
+
+            const totalBet = betAmount + gameState.playerBet;
+            if (totalBet <= gameState.currentBet) {
+                alert('현재 베팅액보다 높게 베팅해야 합니다.');
+                return;
+            }
+
+            gameState.playerChips -= betAmount;
+            gameState.pot += betAmount;
+            gameState.playerBet += betAmount;
+            gameState.currentBet = gameState.playerBet;
+            
+            document.getElementById('betAmount').value = '';
+            gameState.playerTurn = false;
+            setTimeout(aiTurn, 1000);
+        }
+
+        function fold() {
+            gameState.gameActive = false;
+            gameState.aiChips += gameState.pot;
+            document.getElementById('gameStatus').textContent = '당신이 폴드했습니다. AI가 승리!';
+            document.getElementById('bettingArea').style.display = 'none';
+            updateDisplay();
+        }
+
+        function allIn() {
+            const allInAmount = gameState.playerChips;
+            gameState.playerChips = 0;
+            gameState.pot += allInAmount;
+            gameState.playerBet += allInAmount;
+            gameState.currentBet = Math.max(gameState.currentBet, gameState.playerBet);
+            
+            gameState.playerTurn = false;
+            setTimeout(aiTurn, 1000);
+        }
+
+        function aiTurn() {
+            if (!gameState.gameActive) return;
+
+            // 간단한 AI 로직
+            const aiHand = gameState.communityCards.length >= 3 ? 
+                evaluateHand([...gameState.aiCards, ...gameState.communityCards]) : null;
+            
+            const callAmount = gameState.currentBet - gameState.aiBet;
+            const handStrength = aiHand ? aiHand.rank : Math.random() * 3;
+            
+            let action = '';
+            
+            if (handStrength >= 6 || Math.random() < 0.1) { // 강한 핸드 또는 블러프
+                const raiseAmount = Math.min(50 + Math.floor(Math.random() * 100), gameState.aiChips);
+                gameState.aiChips -= raiseAmount;
+                gameState.pot += raiseAmount;
+                gameState.aiBet += raiseAmount;
+                gameState.currentBet = gameState.aiBet;
+                action = `AI가 $${raiseAmount} 레이즈했습니다.`;
+            } else if (handStrength >= 3 || callAmount <= gameState.aiChips * 0.1) { // 중간 핸드 또는 작은 콜
+                if (callAmount > 0) {
+                    gameState.aiChips -= callAmount;
+                    gameState.pot += callAmount;
+                    gameState.aiBet += callAmount;
+                    action = `AI가 $${callAmount} 콜했습니다.`;
+                } else {
+                    action = 'AI가 체크했습니다.';
+                }
+            } else { // 약한 핸드
+                if (Math.random() < 0.3) { // 30% 확률로 폴드
+                    gameState.gameActive = false;
+                    gameState.playerChips += gameState.pot;
+                    document.getElementById('gameStatus').textContent = 'AI가 폴드했습니다. 당신의 승리!';
+                    document.getElementById('bettingArea').style.display = 'none';
+                    updateDisplay();
+                    return;
+                } else {
+                    if (callAmount > 0) {
+                        gameState.aiChips -= callAmount;
+                        gameState.pot += callAmount;
+                        gameState.aiBet += callAmount;
+                        action = `AI가 $${callAmount} 콜했습니다.`;
+                    } else {
+                        action = 'AI가 체크했습니다.';
+                    }
+                }
+            }
+
+            document.getElementById('gameStatus').textContent = action;
+            
+            // 베팅 라운드 종료 체크
+            if (gameState.playerBet === gameState.aiBet) {
+                setTimeout(nextPhase, 1500);
+            } else {
+                gameState.playerTurn = true;
+                setTimeout(() => {
+                    document.getElementById('gameStatus').textContent = '당신의 차례입니다.';
+                }, 1500);
+            }
+            
+            updateDisplay();
+        }
+
+        function nextPhase() {
+            gameState.playerBet = 0;
+            gameState.aiBet = 0;
+            gameState.currentBet = 0;
+            
+            switch (gameState.gamePhase) {
+                case 'preflop':
+                    // 플랍 (3장)
+                    for (let i = 0; i < 3; i++) {
+                        gameState.communityCards.push(dealCard());
+                    }
+                    gameState.gamePhase = 'flop';
+                    document.getElementById('gameStatus').textContent = '플랍 - 당신의 차례입니다';
+                    break;
+                    
+                case 'flop':
+                    // 턴 (1장)
+                    gameState.communityCards.push(dealCard());
+                    gameState.gamePhase = 'turn';
+                    document.getElementById('gameStatus').textContent = '턴 - 당신의 차례입니다';
+                    break;
+                    
+                case 'turn':
+                    // 리버 (1장)
+                    gameState.communityCards.push(dealCard());
+                    gameState.gamePhase = 'river';
+                    document.getElementById('gameStatus').textContent = '리버 - 당신의 차례입니다';
+                    break;
+                    
+                case 'river':
+                    // 쇼다운
+                    showdown();
+                    return;
+            }
+            
+            gameState.playerTurn = true;
+            updateDisplay();
+        }
+
+        function showdown() {
+            gameState.gamePhase = 'showdown';
+            gameState.gameActive = false;
+            
+            const playerHand = evaluateHand([...gameState.playerCards, ...gameState.communityCards]);
+            const aiHand = evaluateHand([...gameState.aiCards, ...gameState.communityCards]);
+            
+            let winner = '';
+            if (playerHand.rank > aiHand.rank) {
+                winner = '당신의 승리!';
+                gameState.playerChips += gameState.pot;
+            } else if (aiHand.rank > playerHand.rank) {
+                winner = 'AI의 승리!';
+                gameState.aiChips += gameState.pot;
+            } else {
+                // 같은 랭크일 때 키커 비교 (간단화)
+                if (playerHand.highCard > aiHand.highCard) {
+                    winner = '당신의 승리!';
+                    gameState.playerChips += gameState.pot;
+                } else if (aiHand.highCard > playerHand.highCard) {
+                    winner = 'AI의 승리!';
+                    gameState.aiChips += gameState.pot;
+                } else {
+                    winner = '무승부!';
+                    gameState.playerChips += Math.floor(gameState.pot / 2);
+                    gameState.aiChips += Math.ceil(gameState.pot / 2);
+                }
+            }
+            
+            document.getElementById('gameStatus').textContent = `쇼다운! ${winner}`;
+            document.getElementById('bettingArea').style.display = 'none';
+            updateDisplay();
+        }
+
+        function evaluateHand(cards) {
+            // 간단한 핸드 평가 (실제로는 더 복잡함)
+            const values = cards.map(card => {
+                if (card.value === 'A') return 14;
+                if (card.value === 'K') return 13;
+                if (card.value === 'Q') return 12;
+                if (card.value === 'J') return 11;
+                return parseInt(card.value);
+            }).sort((a, b) => b - a);
+            
+            const suits = cards.map(card => card.suit);
+            const valueCounts = {};
+            
+            values.forEach(value => {
+                valueCounts[value] = (valueCounts[value] || 0) + 1;
+            });
+            
+            const counts = Object.values(valueCounts).sort((a, b) => b - a);
+            const isFlush = suits.every(suit => suit === suits[0]) && suits.length >= 5;
+            const isStraight = checkStraight(values);
+            
+            // 핸드 랭킹 결정 (간단화)
+            if (isFlush && isStraight) return { rank: 8, highCard: Math.max(...values) }; // 스트레이트 플러시
+            if (counts[0] === 4) return { rank: 7, highCard: Math.max(...values) }; // 포카드
+            if (counts[0] === 3 && counts[1] === 2) return { rank: 6, highCard: Math.max(...values) }; // 풀하우스
+            if (isFlush) return { rank: 5, highCard: Math.max(...values) }; // 플러시
+            if (isStraight) return { rank: 4, highCard: Math.max(...values) }; // 스트레이트
+            if (counts[0] === 3) return { rank: 3, highCard: Math.max(...values) }; // 트리플
+            if (counts[0] === 2 && counts[1] === 2) return { rank: 2, highCard: Math.max(...values) }; // 투페어
+            if (counts[0] === 2) return { rank: 1, highCard: Math.max(...values) }; // 원페어
+            
+            return { rank: 0, highCard: Math.max(...values) }; // 하이카드
+        }
+
+        function checkStraight(values) {
+            const uniqueValues = [...new Set(values)].sort((a, b) => b - a);
+            if (uniqueValues.length < 5) return false;
+            
+            for (let i = 0; i <= uniqueValues.length - 5; i++) {
+                let consecutive = true;
+                for (let j = 0; j < 4; j++) {
+                    if (uniqueValues[i + j] - uniqueValues[i + j + 1] !== 1) {
+                        consecutive = false;
+                        break;
+                    }
+                }
+                if (consecutive) return true;
+            }
+            
+            // A-2-3-4-5 스트레이트 체크
+            if (uniqueValues.includes(14) && uniqueValues.includes(5) && 
+                uniqueValues.includes(4) && uniqueValues.includes(3) && uniqueValues.includes(2)) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        // 게임 초기화
+        updateDisplay();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96acf6300668ea17',t:'MTc1NDQ2NjgxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
